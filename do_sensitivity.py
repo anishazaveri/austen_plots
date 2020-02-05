@@ -120,13 +120,14 @@ def main():
                           default=False, type=bool)
 
     args = myparser.parse_args()
+    Path(args.output_dir).mkdir(exist_ok=True)
     input_df = pd.read_csv(args.input_csv)
     if args.covariate_dir is not None:
         covariate_params = defaultdict(list)
         for f in glob.glob(os.path.join(args.covariate_dir, '*.csv')):
             name = Path(f).stem
             df = pd.read_csv(f)
-            covariate_params[name] = [df['ghat'].values, df['Qhat'].values]
+            covariate_params[name] = [df['g'].values, df['Q'].values]
     else:
         covariate_params = None
     p, plot_coords, variable_importances_df = plot_sensitivity_graph(
