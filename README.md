@@ -15,7 +15,7 @@ plotnine==0.6.0 (https://pypi.org/project/plotnine/)
 To use this code (Use files under `example/` as reference)
 1) Fit your data using any model and generate predictions for g, the propensity score, and Q, the conditional expected outcome.
 2) Generate a .csv file with the following columns: 'g', 'Q', 't', 'y'. These correspond to the propensity score, the conditional expected outcome, the treatment and the outcome. For reference look at `input_df.csv` provided under `example/`
-3) (Optional, but recommended) Repeat step 1 with key covariates dropped before model fitting. For each such instance, generate a .csv file similar to step 2. Save all such files under a single folder (called `covariates` in the example).
+3) (Optional, but recommended) Repeat step 1 with key covariates dropped before model fitting. For each such instance, generate a .csv file similar to step 2. Save all such files under a single folder (called `covariates` in the example). If you name one of these files 'treatment.csv', the code assumes that these are predictions generated from data without treatment, and thus this is not plotted on the graph. The Rsqhat value is still provided in the output co-ordinates file.
 4) Decide a menaningful amount of bias you would like to test for, based on domain knowledge about your dataset. Let's fix this as 2 for the example dataset
 5) Run the following code (values correspond to the example dataset)  
 
