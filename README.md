@@ -15,7 +15,7 @@ plotnine==0.6.0 (https://pypi.org/project/plotnine/)
 To use this code (Use files under `example/` as reference)
 1) Fit your data using any model and generate predictions for g, the propensity score, and Q, the conditional expected outcome.
 2) Generate a .csv file with the following columns: 'g', 'Q', 't', 'y'. These correspond to the propensity score, the conditional expected outcome, the treatment and the outcome. For reference look at `input_df.csv` provided under `example/`
-3) (Optional, but recommended) Repeat step 1 with key covariates dropped before model fitting. For each such instance, generate a .csv file similar to step 2. Save all such files under a single folder (called `covariates` in the example)
+3) (Optional, but recommended) Repeat step 1 with key covariates dropped before model fitting. For each such instance, generate a .csv file similar to step 2. Save all such files under a single folder (called `covariates` in the example).
 4) Decide a menaningful amount of bias you would like to test for, based on domain knowledge about your dataset. Let's fix this as 2 for the example dataset
 5) Run the following code (values correspond to the example dataset)  
 
@@ -24,4 +24,3 @@ To use this code (Use files under `example/` as reference)
 The output is an austen plot. Additionally, co-ordinates for the plot are provided as .csv files
 
 By default `do_sensitivity.py` calculates bias for the ATE. If you would like to calculate bias for the ATT (i.e. restrict sensitivity analysis to datapoints in your `input.csv` file where t=1) add the flag `-do_att True` to the command above.
-
