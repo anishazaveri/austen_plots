@@ -1,10 +1,10 @@
 # austen_plots
 ## Introduction
-This repository contains demo data and code for 
-"Sense and Sensitivity Analysis: Simple Post-Hoc: Analysis of Bias Due to Unobserved Confounding"  
-Victor Veitch* and Anisha Zaveri
-_*corresponding author_  
-(_under submission at International Conference on Machine Learning_)
+This repository contains demo data and code for  
+__"Sense and Sensitivity Analysis: Simple Post-Hoc: Analysis of Bias Due to Unobserved Confounding"__
+_Victor Veitch* and Anisha Zaveri
+*corresponding author
+(under submission at International Conference on Machine Learning)_
 
 ## Requirements
 The code has been tested on Python 3.7.3 with the following Python packages:  
