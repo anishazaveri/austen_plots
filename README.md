@@ -2,9 +2,12 @@
 ## Introduction
 This repository contains demo data and code for  
 __"Sense and Sensitivity Analysis: Simple Post-Hoc: Analysis of Bias Due to Unobserved Confounding"__  
-_Victor Veitch* and Anisha Zaveri  
-*corresponding author  
-(under submission at International Conference on Machine Learning)_  
+_Victor Veitch and Anisha Zaveri  
+
+If a common cause affects both a treatment and outcome it can induce a spurious correlation. 
+For example, the wealth of a patient influences both their health outcomes and whether they take an expensive drug.
+The presence of the common cause (wealth) induces a spurious positive association between the drug and the outcome.
+Austen plots are a simple visual method of determining whether some unobserved common could explain away the association between a specified treatment and outcome. The included software produces Austen plots from the outputs of standard data modeling used in causal inference pipelines. 
 
 ## Requirements
 The code has been tested on Python 3.7.3 with the following Python packages:  
