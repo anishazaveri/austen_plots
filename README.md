@@ -1,7 +1,7 @@
 # austen_plots
 ## Introduction
 This repository contains demo data and code for  
-[Sense and Sensitivity Analysis: Simple Post-Hoc Analysis of Bias Due to Unobserved Confounding](https://arxiv.org/abs/2003.01747)
+[Sense and Sensitivity Analysis: Simple Post-Hoc Analysis of Bias Due to Unobserved Confounding](https://arxiv.org/abs/2003.01747)  
 _Victor Veitch and Anisha Zaveri_
 
 If a common cause affects both a treatment and outcome it can induce a spurious correlation. 
