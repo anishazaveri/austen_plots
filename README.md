@@ -1,8 +1,8 @@
 # austen_plots
 ## Introduction
 This repository contains demo data and code for  
-__"Sense and Sensitivity Analysis: Simple Post-Hoc Analysis of Bias Due to Unobserved Confounding"__  
-_Victor Veitch and Anisha Zaveri  
+[Sense and Sensitivity Analysis: Simple Post-Hoc Analysis of Bias Due to Unobserved Confounding](https://arxiv.org/abs/2003.01747)
+_Victor Veitch and Anisha Zaveri_
 
 If a common cause affects both a treatment and outcome it can induce a spurious correlation. 
 For example, the wealth of a patient influences both their health outcomes and whether they take an expensive drug.
