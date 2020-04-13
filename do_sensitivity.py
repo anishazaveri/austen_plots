@@ -96,13 +96,20 @@ def plot_sensitivity_graph(input_df, bias, covariate_params, do_att):
         variable_importances_df = pd.DataFrame(variable_importances)
         variable_importances_plot = variable_importances_df[
             variable_importances_df['covariate_name'] != 'treatment']
+        scale_fill = ['#D55E00', '#E69F00', '#0072B2',
+                      '#009E73', '#F0E442', '#CC79A7', '#56B4E9']
+        if variable_importances_plot.shape[0] > len(scale_fill):
+            filler = ['#000000'] * \
+                (variable_importances_plot.shape[0]-len(scale_fill))
+            scale_fill = scale_fill + filler
+            print("Number of covariates to plot is greater than the number of colors in the palette - will plot remaining as black.")
         p = p + geom_point(data=variable_importances_plot,
                            mapping=aes(x='ahat',
                                        y='Rsqhat',
                                        fill='covariate_name'),
                            color='black',
                            alpha=0.8,
-                           size=4) + scale_fill_manual(['#D55E00', '#E69F00', '#0072B2', '#009E73', '#F0E442', '#CC79A7', '#56B4E9', ])
+                           size=4) + scale_fill_manual(scale_fill)
     elif covariate_params is None:
         variable_importances_df = pd.DataFrame()
     return p, plot_coords, variable_importances_df
