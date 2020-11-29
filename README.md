@@ -35,7 +35,7 @@ The output is an austen plot. Additionally, co-ordinates for the plot are provid
 By default `do_sensitivity.py` calculates bias for the ATE. If you would like to calculate bias for the ATT (i.e. restrict sensitivity analysis to datapoints in your `input.csv` file where t=1) add the flag `-do_att True` to the command above.
 
 ### With Bootstrapping
-You can optionally decide to generate plots with bootstrapped values. For this, after doing the steps 1-4 under the section 'Without bootstrapping' do the following:
+You can optionally decide to generate plots with bootstrap confidence intervals. For this, after doing the steps 1-4 under the section 'Without bootstrapping' do the following:
 1) Create a folder for bootstrapped inputs/outputs. In the example this is called `bootstrap`.
 2) Within `bootstrap` create subfolders for each bootstrap iteration.
 3) Within each boostrapped iteration folder save .csv and optionally, covariate files, as described in steps 1-3 using 'g', 'Q', 't', 'y' values obtained from a bootstrapped dataset. These should have the same names as those in the parent folder. 
