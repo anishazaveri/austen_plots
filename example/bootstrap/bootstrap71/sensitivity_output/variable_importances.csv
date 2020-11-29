@@ -1,0 +1,6 @@
+#../do_sensitivity.py -i input_df.csv -b 2 -o sensitivity_output -cov covariates/ -boot bootstrap/ -cut 0.95 -multi 4
+covariate_name,ahat,Rsqhat
+age,0.16075073996531297,0.07001898674375674
+bloodwork,0.027995016964962094,0.01570666453959704
+sex,0.00025899156287778613,0.050592621856924876
+socioeconomic,0.03246898138359011,0.0
