@@ -340,7 +340,7 @@ def do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, out
         subdir, input_name, covariate_dir_name, output_dir_name)
     plot_coords, variable_coords = do_single_sensitivity(input_csv, args.bias, boot_output_dir,
                                                          boot_covariate_dir, args.do_att, command, verbose=False)
-    # rename columns to had a suffix of the iteration number
+    # rename columns to have a suffix of the iteration number
     plot_coords = plot_coords.drop(columns='delta').rename(
         columns={'Rsq': f"Rsq_{n}"})
     if variable_coords is not None:

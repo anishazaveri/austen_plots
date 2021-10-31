@@ -10,13 +10,7 @@ The presence of the common cause (wealth) induces a spurious positive associatio
 Austen plots are a simple visual method of determining whether some unobserved common could explain away the association between a specified treatment and outcome. The included software produces Austen plots from the outputs of standard data modeling used in causal inference pipelines. 
 
 ## Requirements
-The code has been tested on Python 3.8.3 with the following Python packages:  
-scikit-learn==0.23.1  
-scipy==1.5.0  
-numpy==1.18.5  
-pandas==1.1.13  
-plotnine==0.7.1 (https://pypi.org/project/plotnine/)  
-tqdm==4.47.0 (https://pypi.org/project/tqdm/)  
+The code has been tested on Python 3.8.12 with the packages specified in `requirements.txt`
 
 
 ## Instructions
@@ -28,7 +22,7 @@ Use files under `example/` as reference:
 4) Decide a meaningful amount of bias you would like to test for, based on domain knowledge about your dataset. Let's fix this as 2 for the example dataset
 5) Run the following code (values correspond to the example dataset).  
 
-`do_sensitivity.py -input_csv input_df.csv -bias -2 -output_dir sensitivity_output -covariate_dir covariates/`
+`python ../do_sensitivity.py --input_csv input_df.csv --bias 2.0 --output_dir sensitivity_output --covariate_dir covariates/`
 
 The output is an austen plot. Additionally, co-ordinates for the plot are provided as .csv files.
 
@@ -43,7 +37,7 @@ _Recommendation_: If you are generating these values using cross validation tech
 4) (Optional) Decide values for confidence interval cutoffs, and multiprocessing. Default value for the confidence interval cutoff is 0.95. Default value for multiprocessing is 1, you can set this to the [number of cores](https://www.w3resource.com/python-exercises/python-basic-exercise-47.php) on your computer to maximize speed.
 5) Run the following code (values correspond to the example dataset). You may specify optional flags `-cut`, `-multi`, `-do_att` as needed.
 
-`do_sensitivity.py -input_csv input_df.csv -bias -2 -output_dir sensitivity_output -covariate_dir covariates/ -boot bootstrap/` 
+`python ../do_sensitivity.py --input_csv input_df.csv --bias 2 --output_dir sensitivity_output --covariate_dir covariates/ --bootstrap_dir bootstrap/ --multi 4` 
 
 The outputs are individual austen plots for each bootstrapped dataset along with a consolidated plot showing confidence intervals. Additionally, co-ordinates for the plots are provided as .csv files. 
 
