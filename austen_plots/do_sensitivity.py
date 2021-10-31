@@ -8,7 +8,6 @@ from functools import reduce
 from multiprocessing import Pool
 from tqdm import tqdm
 
-
 import numpy as np
 import pandas as pd
 import scipy as sp
@@ -34,15 +33,15 @@ def calc_Rsq(row, g, Q, t, y):
     alpha = row['alpha']
     delta = row['delta']
     alpha_shape, beta_shape = calc_beta_shapes(g, alpha)
-    Rsq_num = delta**2 * np.mean(sp.special.polygamma(1, alpha_shape +
-                                                      t) + sp.special.polygamma(1, beta_shape + (1 - t)))
+    Rsq_num = delta ** 2 * np.mean(sp.special.polygamma(1, alpha_shape +
+                                                        t) + sp.special.polygamma(1, beta_shape + (1 - t)))
     Rsq_den = mean_squared_error(y, Q)
     return Rsq_num / Rsq_den
 
 
 def calc_Rsqhat(y, Qhat, Q):
     Rsqhat = (mean_squared_error(y, Qhat) - mean_squared_error(y, Q)) / \
-        (mean_squared_error(y, Qhat))
+             (mean_squared_error(y, Qhat))
     if Rsqhat < 0:
         Rsqhat = 0
     return Rsqhat
@@ -76,10 +75,11 @@ def get_color_palette(n, verbose):
                   '#009E73', '#F0E442', '#CC79A7', '#56B4E9']
     if n > len(scale_fill):
         filler = ['#000000'] * \
-            (n - len(scale_fill))
+                 (n - len(scale_fill))
         scale_fill = scale_fill + filler
         if verbose:
-            print("Number of covariates to plot is greater than the number of colors in the palette - will plot remaining as black.")
+            print(
+                "Number of covariates to plot is greater than the number of colors in the palette - will plot remaining as black.")
     return scale_fill
 
 
@@ -90,11 +90,12 @@ def modify_theme(p, bias):
                                   axis_text=element_text(
                                       color='black', size=10),
                                   plot_title=element_text(size=12),
-                                  legend_text=element_text(size=12)) + labs(x='Influence on treatment ' + r'($\mathregular{\alpha}$)',
-                                                                            fill='',
-                                                                            y='Influence on outcome ' +
-                                                                            r'(partial $R^2$)',
-                                                                            title=f"Bias = {bias}")
+                                  legend_text=element_text(size=12)) + labs(
+        x='Influence on treatment ' + r'($\mathregular{\alpha}$)',
+        fill='',
+        y='Influence on outcome ' +
+          r'(partial $R^2$)',
+        title=f"Bias = {bias}")
     return p
 
 
@@ -188,7 +189,8 @@ def plot_sensitivity_graph(input_df, bias, covariate_params, do_att, verbose):
     return p, plot_coords, variable_importances_df
 
 
-def plot_bootstrap_sensitivity_graph(plot_coords, variable_coords, boot_plot_coords, boot_variable_coords, plot_variables, bootstrap_cutoff, bias):
+def plot_bootstrap_sensitivity_graph(plot_coords, variable_coords, boot_plot_coords, boot_variable_coords,
+                                     plot_variables, bootstrap_cutoff, bias):
     # merge into single df
     boot_plot_coords = reduce(lambda left, right: pd.merge(left, right, on='alpha',
                                                            how='inner'), boot_plot_coords)
@@ -212,10 +214,12 @@ def plot_bootstrap_sensitivity_graph(plot_coords, variable_coords, boot_plot_coo
             boot_variable_coords, variable_coords, how='left', on='covariate_name')
 
         # calc ci
-        boot_variable_coords[['Rsqhat_main', 'Rsqhat_ci_lower', 'Rsqhat_ci_upper']] = boot_variable_coords.filter(regex='^Rsqhat', axis=1).apply(
+        boot_variable_coords[['Rsqhat_main', 'Rsqhat_ci_lower', 'Rsqhat_ci_upper']] = boot_variable_coords.filter(
+            regex='^Rsqhat', axis=1).apply(
             calc_ci, axis=1, result_type='expand', args=(bootstrap_cutoff,))
 
-        boot_variable_coords[['ahat_main', 'ahat_ci_lower', 'ahat_ci_upper']] = boot_variable_coords.filter(regex='^ahat', axis=1).apply(
+        boot_variable_coords[['ahat_main', 'ahat_ci_lower', 'ahat_ci_upper']] = boot_variable_coords.filter(
+            regex='^ahat', axis=1).apply(
             calc_ci, axis=1, result_type='expand', args=(bootstrap_cutoff,))
         boot_variable_coords_plot = boot_variable_coords[
             boot_variable_coords['covariate_name'] != 'treatment']
@@ -232,7 +236,8 @@ def plot_bootstrap_sensitivity_graph(plot_coords, variable_coords, boot_plot_coo
     if plot_variables == 'main':
         scale_fill = get_color_palette(variable_coords_plot.shape[0], False)
         p = p + geom_point(data=variable_coords_plot, mapping=aes(x='ahat', y='Rsqhat',
-                                                                  fill='factor(covariate_name)'), inherit_aes=False, color='black', alpha=1, size=2.5, stroke=0.5)\
+                                                                  fill='factor(covariate_name)'), inherit_aes=False,
+                           color='black', alpha=1, size=2.5, stroke=0.5) \
             + scale_fill_manual(scale_fill)
         return p, boot_plot_coords, variable_coords
 
@@ -240,11 +245,14 @@ def plot_bootstrap_sensitivity_graph(plot_coords, variable_coords, boot_plot_coo
         scale_fill = get_color_palette(
             boot_variable_coords_plot.shape[0], False)
         p = p + geom_errorbar(data=boot_variable_coords_plot, mapping=aes(x='ahat_main', ymin='Rsqhat_ci_lower',
-                                                                          ymax='Rsqhat_ci_upper'), inherit_aes=False, width=0.02, size=0.5)\
+                                                                          ymax='Rsqhat_ci_upper'), inherit_aes=False,
+                              width=0.02, size=0.5) \
             + geom_errorbarh(data=boot_variable_coords_plot, mapping=aes(y='Rsqhat_main', xmin='ahat_ci_lower',
-                                                                         xmax='ahat_ci_upper'), inherit_aes=False, height=0.02, size=0.5)\
+                                                                         xmax='ahat_ci_upper'), inherit_aes=False,
+                             height=0.02, size=0.5) \
             + geom_point(data=boot_variable_coords_plot, mapping=aes(x='ahat_main', y='Rsqhat_main',
-                                                                     fill='factor(covariate_name)'), inherit_aes=False, color='black', alpha=1, size=2.5, stroke=0.5)\
+                                                                     fill='factor(covariate_name)'), inherit_aes=False,
+                         color='black', alpha=1, size=2.5, stroke=0.5) \
             + scale_fill_manual(scale_fill)
         return p, boot_plot_coords, boot_variable_coords
     else:
@@ -268,7 +276,6 @@ def do_single_sensitivity(input_csv, bias, output_dir, covariate_dir, do_att, co
         variable_importances_df: DataFrame with co-ordinates of the plots representing missing covariates
     """
     input_df = pd.read_csv(input_csv)
-
     # create a dictionary of covariate name:[ghat, qhat]
     if covariate_dir is not None:
         covariate_params = defaultdict(list)
@@ -318,7 +325,7 @@ def get_bootstrap_folder_names(subdir, input_name, covariate_dir_name, output_di
     return input_csv, boot_output_dir, boot_covariate_dir
 
 
-def do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, output_dir_name, command, args):
+def do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, output_dir_name, bias, do_att, command):
     """Calculates and saves a single sensitivity plot for a single bootstrapped dataset. 
 
     Args:
@@ -338,8 +345,8 @@ def do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, out
     subdir = subdir_list[n]
     input_csv, boot_output_dir, boot_covariate_dir = get_bootstrap_folder_names(
         subdir, input_name, covariate_dir_name, output_dir_name)
-    plot_coords, variable_coords = do_single_sensitivity(input_csv, args.bias, boot_output_dir,
-                                                         boot_covariate_dir, args.do_att, command, verbose=False)
+    plot_coords, variable_coords = do_single_sensitivity(input_csv, bias, boot_output_dir,
+                                                         boot_covariate_dir, do_att, command, verbose=False)
     # rename columns to have a suffix of the iteration number
     plot_coords = plot_coords.drop(columns='delta').rename(
         columns={'Rsq': f"Rsq_{n}"})
@@ -351,60 +358,59 @@ def do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, out
         return plot_coords, None
 
 
-def main():
-    # collect args
-    command = ' '.join(sys.argv[0:])
-    myparser = argparse.ArgumentParser()
-    myparser.add_argument('-i', '--input_csv', required=True)
-    myparser.add_argument('-b', '--bias', required=True, type=float)
-    myparser.add_argument('-o', '--output_dir', required=True)
-    myparser.add_argument('-cov', '--covariate_dir',
-                          required=False, default=None)
-    myparser.add_argument('-boot', '--bootstrap_dir',
-                          required=False, default=None)
-    myparser.add_argument('-cut', '--bootstrap_cutoff',
-                          required=False, type=float, default=0.95)
-    myparser.add_argument('-do_att', '--do_att', required=False,
-                          default=False, type=bool)
-    myparser.add_argument('-multi', '--multi',
-                          required=False, default=1, type=int)
-    args = myparser.parse_args()
-
+def do_sensitivity(input_csv, bias, output_dir, covariate_dir=None, bootstrap_dir=None, bootstrap_cutoff=0.95, do_att=False,
+         multi=1):
     # plot single sensitivity without bootstrap
-    main_plot_coords, main_variable_coords = do_single_sensitivity(args.input_csv, args.bias, args.output_dir,
-                                                                   args.covariate_dir, args.do_att, command)
+    command = f'do_sensitivity.py --input_csv {input_csv} --bias {bias} --output_dir {output_dir}, --covariate_dir {covariate_dir} --bootstrap_dir {bootstrap_dir} --bootstrap_dir {bootstrap_dir} --bootstrap_cutoff {bootstrap_cutoff}, --do_att {do_att} --multi {multi}'
+    main_plot_coords, main_variable_coords = do_single_sensitivity(input_csv, bias, output_dir,
+                                                                   covariate_dir, do_att, command)
 
     # if bootstrap values provided
-    if args.bootstrap_dir is not None:
+    if bootstrap_dir is not None:
         # extract names of input_csv, covariate dir and output dir
-        input_name = os.path.basename(os.path.normpath(args.input_csv))
-        if args.covariate_dir is not None:
+        input_name = os.path.basename(os.path.normpath(input_csv))
+        if covariate_dir is not None:
             covariate_dir_name = os.path.basename(
-                os.path.normpath(args.covariate_dir))
+                os.path.normpath(covariate_dir))
         else:
             covariate_dir_name = None
-        output_dir_name = os.path.basename(os.path.normpath(args.output_dir))
+        output_dir_name = os.path.basename(os.path.normpath(output_dir))
 
         # create paths of input subdirectories
-        subdir_list = [os.path.join(args.bootstrap_dir, subdir)
-                       for subdir in os.listdir(args.bootstrap_dir)]
+        subdir_list = [os.path.join(bootstrap_dir, subdir)
+                       for subdir in os.listdir(bootstrap_dir) if not subdir.startswith('.')]
         print('Calculating outputs for individual bootstrapped datasets')
-        # Create pool for multiprocessing
-        pool = Pool(args.multi)
-        # Create progress bar
-        pbar = tqdm(total=len(subdir_list))
 
-        # Calculate bootstrap co-ordinates for all provided bootstrap values and combine them into a list of dataframes
-        res = [pool.apply_async(do_bootstrap_sensitivity, args=(
-            n, subdir_list), kwds={'input_name': input_name, 'covariate_dir_name': covariate_dir_name, 'output_dir_name': output_dir_name, 'command': command, 'args': args}, callback=lambda _: pbar.update(1)) for n in range(len(subdir_list))]
-        boot_plot_coords, boot_variable_coords = list(
-            zip(*[pool.get() for pool in res]))
-        pbar.close()
-        boot_plot_coords = list(boot_plot_coords)
-        boot_variable_coords = list(boot_variable_coords)
+        boot_plot_coords = []
+        boot_variable_coords = []
+
+        for n in range(len(subdir_list)):
+            plot_coords, variable_coords = do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, output_dir_name, bias, do_att, command)
+            boot_plot_coords.append(plot_coords)
+            boot_variable_coords.append(variable_coords)
+
+
+        #
+        # # Create pool for multiprocessing
+        # pool = Pool(multi)
+        # # Create progress bar
+        # pbar = tqdm(total=len(subdir_list))
+        #
+        # # Calculate bootstrap co-ordinates for all provided bootstrap values and combine them into a list of dataframes
+        # res = [pool.apply_async(do_bootstrap_sensitivity, args=(
+        #     n,), kwds={'subdir_list': subdir_list, 'input_name': input_name, 'covariate_dir_name': covariate_dir_name,
+        #                            'output_dir_name': output_dir_name, 'bias': bias, 'do_att': do_att,
+        #                            'command': command},
+        #                         callback=lambda _: pbar.update(1)) for n in range(len(subdir_list))]
+        #
+        # boot_plot_coords, boot_variable_coords = list(
+        #     zip(*[p.get() for p in res]))
+        # pbar.close()
+        # boot_plot_coords = list(boot_plot_coords)
+        # boot_variable_coords = list(boot_variable_coords)
 
         # which variables to plot?
-        if args.covariate_dir is None:
+        if covariate_dir is None:
             plot_variables = 'none'
         else:
             if has_none(boot_variable_coords):
@@ -414,22 +420,23 @@ def main():
         print('Plotting combined bootstrap graph')
 
         p, plot_coords_out, variable_coords_out = plot_bootstrap_sensitivity_graph(
-            main_plot_coords, main_variable_coords, boot_plot_coords, boot_variable_coords, plot_variables, args.bootstrap_cutoff, args.bias)
+            main_plot_coords, main_variable_coords, boot_plot_coords, boot_variable_coords, plot_variables,
+            bootstrap_cutoff, bias)
 
         # Save bootstrap output files
-        p.save(os.path.join(args.output_dir,
+        p.save(os.path.join(output_dir,
                             'austen_plot_bootstrap.png'), dpi=500, verbose=False)
 
-        with open(os.path.join(args.output_dir, 'austen_plot_coordinates_bootstrap.csv'), 'w+', newline='\n') as file:
+        with open(os.path.join(output_dir, 'austen_plot_coordinates_bootstrap.csv'), 'w+', newline='\n') as file:
             file.write(f'#{command}\n')
             plot_coords_out.to_csv(file, index=False)
         if variable_coords_out is not None:
-            with open(os.path.join(args.output_dir, 'variable_importances_bootstrap.csv'), 'w+', newline='\n') as file:
+            with open(os.path.join(output_dir, 'variable_importances_bootstrap.csv'), 'w+', newline='\n') as file:
                 file.write(f'#{command}\n')
                 variable_coords_out.to_csv(file, index=False)
 
     return None
 
 
-if __name__ == "__main__":
-    main()
+
+main('/Users/nuaxz24/Documents/Projects/austen_plots/example/input_df.csv', 2, '/Users/nuaxz24/Documents/Projects/austen_plots/example/sensitivity_output', '/Users/nuaxz24/Documents/Projects/austen_plots/example/covariates', '/Users/nuaxz24/Documents/Projects/austen_plots/example/bootstrap', multi=1)
