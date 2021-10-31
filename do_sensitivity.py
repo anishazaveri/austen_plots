@@ -23,10 +23,13 @@ def calc_beta_shapes(g, alpha):
 
 
 def calc_delta(alpha, g, bias):
-    alpha_shape, beta_shape = calc_beta_shapes(g, alpha)
-    bias_term = sp.special.digamma(alpha_shape + 1) - sp.special.digamma(
-        beta_shape) - sp.special.digamma(alpha_shape) + sp.special.digamma(beta_shape + 1)
-    delta = bias / np.mean(bias_term)
+    expectation_term = np.mean((1/g) + (1/(1-g)))
+    delta = bias * ((1/alpha) - 1) / expectation_term
+
+    # alpha_shape, beta_shape = calc_beta_shapes(g, alpha)
+    # bias_term = sp.special.digamma(alpha_shape + 1) - sp.special.digamma(
+    #     beta_shape) - sp.special.digamma(alpha_shape) + sp.special.digamma(beta_shape + 1)
+    # delta = bias / np.mean(bias_term)
     return delta
 
 
