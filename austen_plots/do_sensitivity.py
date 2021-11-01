@@ -1,17 +1,13 @@
-import argparse
 import glob
 import os
-import sys
 from collections import defaultdict
 from pathlib import Path
 from functools import reduce
-from multiprocessing import Pool
-from tqdm import tqdm
-
 import numpy as np
 import pandas as pd
 import scipy as sp
-from plotnine import *
+import plotnine as pn
+from tqdm import tqdm
 from sklearn.metrics import mean_squared_error
 
 
@@ -84,13 +80,13 @@ def get_color_palette(n, verbose):
 
 
 def modify_theme(p, bias):
-    p = p + theme_light() + theme(figure_size=(3.5, 3.5),
-                                  legend_key=element_blank(),
-                                  axis_title=element_text(size=12),
-                                  axis_text=element_text(
+    p = p + pn.theme_light() + pn.theme(figure_size=(3.5, 3.5),
+                                  legend_key=pn.element_blank(),
+                                  axis_title=pn.element_text(size=12),
+                                  axis_text=pn.element_text(
                                       color='black', size=10),
-                                  plot_title=element_text(size=12),
-                                  legend_text=element_text(size=12)) + labs(
+                                  plot_title=pn.element_text(size=12),
+                                  legend_text=pn.element_text(size=12)) + pn.labs(
         x='Influence on treatment ' + r'($\mathregular{\alpha}$)',
         fill='',
         y='Influence on outcome ' +
@@ -99,9 +95,9 @@ def modify_theme(p, bias):
     return p
 
 
-def modify_Rsq_plot(df, col):
+def modify_Rsq_plot(df: pd.DataFrame, col: str) -> pd.DataFrame:
     """
-    Makes the largest Rsq that is greater than 1, equal to 1 for prettier plots. 
+    Makes the smallest Rsq that is greater than 1, equal to 1 for to avoid discontinuous lines.
     """
     try:
         Rsq_to_modify = df.loc[df[col] > 1, col].idxmin()
@@ -111,7 +107,42 @@ def modify_Rsq_plot(df, col):
     return df
 
 
-def plot_sensitivity_graph(input_df, bias, covariate_params, do_att, verbose):
+def calculate_sensitivity_graph(input_df, bias, covariate_params, do_att, verbose):
+    # Truncate input df if ATT is to be calculated
+    if do_att:
+        input_df_plot = input_df[input_df['t'] == 1]
+    else:
+        input_df_plot = input_df.copy(deep=True)
+    if verbose:
+        print(f"Calculating bias for {'ATT' if do_att else 'ATE'}...")
+
+    # Calculate alpha, delta and Rsq
+    plot_coords = pd.DataFrame({'alpha': np.arange(0.0001, 1, 0.0005)})
+    plot_coords['delta'] = plot_coords['alpha'].apply(
+        calc_delta, args=(input_df_plot['g'], bias))
+    plot_coords['Rsq'] = plot_coords.apply(
+        calc_Rsq, axis=1, args=(input_df_plot['g'], input_df_plot['Q'], input_df_plot['t'], input_df_plot['y']))
+
+    # make largest Rsq value=1
+    plot_coords = modify_Rsq_plot(plot_coords, 'Rsq')
+
+    # if covariate information provided, calculate co-ordinates of the covariates
+    if covariate_params:
+        variable_importances = []
+        for k, v in covariate_params.items():
+            variable_importances_sub = {'covariate_name': k,
+                                        'ahat': np.nan if k == 'treatment' else calc_ahat(v[0], input_df['g']),
+                                        'Rsqhat': calc_Rsqhat(input_df['y'], v[1], input_df['Q'])}
+            variable_importances.append(variable_importances_sub)
+        variable_importances_df = pd.DataFrame(variable_importances)
+
+    else:
+        variable_importances_df = None
+
+    return plot_coords, variable_importances_df
+
+
+def plot_sensitivity_graph(plot_coords, variable_importances_df, bias, verbose):
     """Creates a austen plot without bootstrap
 
     Args:
@@ -127,70 +158,35 @@ def plot_sensitivity_graph(input_df, bias, covariate_params, do_att, verbose):
         variable_importances_df: DataFrame with co-ordinates of the plots representing missing covariates
 
     """
-    # Truncate input df if ATT is to be calculated
-    if do_att == True:
-        input_df_line = input_df[input_df['t'] == 1]
-        if verbose:
-            print('Calculating bias for ATT.....')
-    else:
-        input_df_line = input_df.copy(deep=True)
-        if verbose:
-            print('Calculating bias for ATE.....')
-
-    # Calculate alpha, delta and Rsq
-    plot_coords = pd.DataFrame({'alpha': np.arange(0.0001, 1, 0.0005)})
-    plot_coords['delta'] = plot_coords['alpha'].apply(
-        calc_delta, args=(input_df_line['g'], bias))
-    plot_coords['Rsq'] = plot_coords.apply(
-        calc_Rsq, axis=1, args=(input_df_line['g'], input_df_line['Q'], input_df_line['t'], input_df_line['y']))
-
-    # make largest Rsq value=1
-    plot_coords = modify_Rsq_plot(plot_coords, 'Rsq')
-
     # plot the line
-    p = (ggplot(data=plot_coords, mapping=aes(x='alpha', y='Rsq'))
-         + geom_line(color='#585858', size=1, na_rm=True)
-         + scale_x_continuous(expand=[0, 0, 0, 0], limits=(-0.03, 1))
-         + scale_y_continuous(expand=[0, 0, 0, 0], limits=(-0.03, 1))
+    p = (pn.ggplot(data=plot_coords, mapping=pn.aes(x='alpha', y='Rsq'))
+         + pn.geom_line(color='#585858', size=1, na_rm=True)
+         + pn.scale_x_continuous(expand=[0, 0, 0, 0], limits=(-0.03, 1))
+         + pn.scale_y_continuous(expand=[0, 0, 0, 0], limits=(-0.03, 1))
          )
     p = modify_theme(p, bias)
 
-    # if covariate information provided, calculate co-ordinates of the covariates
-    if covariate_params is not None:
-        variable_importances = defaultdict(list)
-        for k, v in covariate_params.items():
-            variable_importances['covariate_name'].append(k)
-            if k != 'treatment':
-                variable_importances['ahat'].append(
-                    calc_ahat(v[0], input_df['g']))
-            else:
-                variable_importances['ahat'].append(np.nan)
-            variable_importances['Rsqhat'].append(
-                calc_Rsqhat(input_df['y'], v[1], input_df['Q']))
-
-        variable_importances_df = pd.DataFrame(variable_importances)
-
+    if variable_importances_df is not None:
         # drop treatment from covariates to plot
         variable_importances_plot = variable_importances_df[
             variable_importances_df['covariate_name'] != 'treatment']
         scale_fill = get_color_palette(
-            variable_importances_df.shape[0], verbose)
+            variable_importances_plot.shape[0], verbose)
 
         # Add variables to plot
-        p = p + geom_point(data=variable_importances_plot,
-                           mapping=aes(x='ahat',
+        p = p + pn.geom_point(data=variable_importances_plot,
+                           mapping=pn.aes(x='ahat',
                                        y='Rsqhat',
                                        fill='covariate_name'),
                            color='black',
                            alpha=0.8,
-                           size=4) + scale_fill_manual(scale_fill)
-    elif covariate_params is None:
-        variable_importances_df = None
-    return p, plot_coords, variable_importances_df
+                           size=4) + pn.scale_fill_manual(scale_fill)
+
+    return p
 
 
-def plot_bootstrap_sensitivity_graph(plot_coords, variable_coords, boot_plot_coords, boot_variable_coords,
-                                     plot_variables, bootstrap_cutoff, bias):
+def calculate_bootstrap_sensitivity_graph(plot_coords, variable_coords, boot_plot_coords, boot_variable_coords,
+                                          plot_variables, bootstrap_cutoff):
     # merge into single df
     boot_plot_coords = reduce(lambda left, right: pd.merge(left, right, on='alpha',
                                                            how='inner'), boot_plot_coords)
@@ -221,45 +217,49 @@ def plot_bootstrap_sensitivity_graph(plot_coords, variable_coords, boot_plot_coo
         boot_variable_coords[['ahat_main', 'ahat_ci_lower', 'ahat_ci_upper']] = boot_variable_coords.filter(
             regex='^ahat', axis=1).apply(
             calc_ci, axis=1, result_type='expand', args=(bootstrap_cutoff,))
-        boot_variable_coords_plot = boot_variable_coords[
-            boot_variable_coords['covariate_name'] != 'treatment']
-    if plot_variables == 'main':
-        variable_coords_plot = variable_coords[variable_coords['covariate_name'] != 'treatment']
 
-    p = (ggplot(data=boot_plot_coords, mapping=aes(x='alpha', y='Rsq'))
-         + geom_ribbon(aes(ymin='ci_lower', ymax='ci_upper'), fill='#D3D3D3')
-         + geom_line(color='#585858', size=1, na_rm=True)
-         + scale_x_continuous(expand=[0, 0, 0, 0], limits=(-0.05, 1))
-         + scale_y_continuous(expand=[0, 0, 0, 0], limits=(-0.05, 1)))
+        return boot_plot_coords, boot_variable_coords
+
+    elif plot_variables == 'main':
+        return boot_plot_coords, variable_coords
+
+    elif plot_variables == 'none':
+        return boot_plot_coords, None
+
+
+def plot_bootstrap_sensitivity_graph(plot_coords, variable_coords, plot_variables, bias):
+    p = (pn.ggplot(data=plot_coords, mapping=pn.aes(x='alpha', y='Rsq'))
+         + pn.geom_ribbon(pn.aes(ymin='ci_lower', ymax='ci_upper'), fill='#D3D3D3')
+         + pn.geom_line(color='#585858', size=1, na_rm=True)
+         + pn.scale_x_continuous(expand=[0, 0, 0, 0], limits=(-0.05, 1))
+         + pn.scale_y_continuous(expand=[0, 0, 0, 0], limits=(-0.05, 1)))
 
     p = modify_theme(p, bias)
-    if plot_variables == 'main':
+
+    if plot_variables != 'none':
+        variable_coords_plot = variable_coords[variable_coords['covariate_name'] != 'treatment']
         scale_fill = get_color_palette(variable_coords_plot.shape[0], False)
-        p = p + geom_point(data=variable_coords_plot, mapping=aes(x='ahat', y='Rsqhat',
+
+        if plot_variables == 'main':
+            variable_coords_plot = variable_coords_plot.rename(columns={'Rsqhat': 'Rsqhat_main', 'ahat': 'ahat_main'})
+
+        if plot_variables == 'both':
+            p = p + pn.geom_errorbar(data=variable_coords_plot, mapping=pn.aes(x='ahat_main', ymin='Rsqhat_ci_lower',
+                                                                         ymax='Rsqhat_ci_upper'), inherit_aes=False,
+                                  width=0.02, size=0.5) \
+                + pn.geom_errorbarh(data=variable_coords_plot, mapping=pn.aes(y='Rsqhat_main', xmin='ahat_ci_lower',
+                                                                        xmax='ahat_ci_upper'), inherit_aes=False,
+                                 height=0.02, size=0.5)
+
+        p = p + pn.geom_point(data=variable_coords_plot, mapping=pn.aes(x='ahat_main', y='Rsqhat_main',
                                                                   fill='factor(covariate_name)'), inherit_aes=False,
                            color='black', alpha=1, size=2.5, stroke=0.5) \
-            + scale_fill_manual(scale_fill)
-        return p, boot_plot_coords, variable_coords
+            + pn.scale_fill_manual(scale_fill)
 
-    if plot_variables == 'both':
-        scale_fill = get_color_palette(
-            boot_variable_coords_plot.shape[0], False)
-        p = p + geom_errorbar(data=boot_variable_coords_plot, mapping=aes(x='ahat_main', ymin='Rsqhat_ci_lower',
-                                                                          ymax='Rsqhat_ci_upper'), inherit_aes=False,
-                              width=0.02, size=0.5) \
-            + geom_errorbarh(data=boot_variable_coords_plot, mapping=aes(y='Rsqhat_main', xmin='ahat_ci_lower',
-                                                                         xmax='ahat_ci_upper'), inherit_aes=False,
-                             height=0.02, size=0.5) \
-            + geom_point(data=boot_variable_coords_plot, mapping=aes(x='ahat_main', y='Rsqhat_main',
-                                                                     fill='factor(covariate_name)'), inherit_aes=False,
-                         color='black', alpha=1, size=2.5, stroke=0.5) \
-            + scale_fill_manual(scale_fill)
-        return p, boot_plot_coords, boot_variable_coords
-    else:
-        return p, boot_plot_coords, None
+    return p
 
 
-def do_single_sensitivity(input_csv, bias, output_dir, covariate_dir, do_att, command, verbose=True):
+def do_single_sensitivity(input_csv, bias, output_dir, covariate_dir, do_att, command, plot_graph=True, verbose=True):
     """Creates and saves a single austen plot without bootstrap values
 
     Args:
@@ -277,7 +277,7 @@ def do_single_sensitivity(input_csv, bias, output_dir, covariate_dir, do_att, co
     """
     input_df = pd.read_csv(input_csv)
     # create a dictionary of covariate name:[ghat, qhat]
-    if covariate_dir is not None:
+    if covariate_dir:
         covariate_params = defaultdict(list)
         for f in glob.glob(os.path.join(covariate_dir, '*.csv')):
             name = Path(f).stem
@@ -286,24 +286,38 @@ def do_single_sensitivity(input_csv, bias, output_dir, covariate_dir, do_att, co
     else:
         covariate_params = None
 
-    p, plot_coords, variable_importances_df = plot_sensitivity_graph(
-        input_df, bias, covariate_params, do_att, verbose)
-    frac_bad_rows = len(
-        plot_coords[plot_coords['Rsq'] >= 1]) / len(plot_coords)
-    if (frac_bad_rows > 0.5) and verbose:
-        print('Warning: Bias this large may not be compatible with the data')
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    p.save(os.path.join(output_dir, 'austen_plot.png'),
-           dpi=500, verbose=False)
-    with open(os.path.join(output_dir, 'austen_plot_coordinates.csv'), 'w+', newline='\n') as file:
-        file.write(f'#{command}\n')
-        plot_coords.to_csv(file, index=False)
-    if variable_importances_df is not None:
-        with open(os.path.join(output_dir, 'variable_importances.csv'), 'w+', newline='\n') as file:
+    plot_coords, variable_importances_df = calculate_sensitivity_graph(input_df, bias, covariate_params, do_att,
+                                                                       verbose)
+
+    if verbose:
+        frac_bad_rows = len(
+            plot_coords[plot_coords['Rsq'] >= 1]) / len(plot_coords)
+        if (frac_bad_rows > 0.5):
+            print('Warning: Bias this large may not be compatible with the data')
+
+    if plot_graph:
+        p = plot_sensitivity_graph(
+            plot_coords, variable_importances_df, bias, verbose)
+    else:
+        p = None
+
+    if output_dir:
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        if plot_graph:
+            p.save(os.path.join(output_dir, 'austen_plot.png'),
+                   dpi=500, verbose=False)
+
+        with open(os.path.join(output_dir, 'austen_plot_coordinates.csv'), 'w+', newline='\n') as file:
             file.write(f'#{command}\n')
-            variable_importances_df.to_csv(file, index=False)
-    return plot_coords, variable_importances_df
+            plot_coords.to_csv(file, index=False)
+        if variable_importances_df is not None:
+            with open(os.path.join(output_dir, 'variable_importances.csv'), 'w+', newline='\n') as file:
+                file.write(f'#{command}\n')
+                variable_importances_df.to_csv(file, index=False)
+
+    return p, plot_coords, variable_importances_df
 
 
 def has_none(l):
@@ -325,7 +339,7 @@ def get_bootstrap_folder_names(subdir, input_name, covariate_dir_name, output_di
     return input_csv, boot_output_dir, boot_covariate_dir
 
 
-def do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, output_dir_name, bias, do_att, command):
+def do_single_bootstrap_sensitivity(n, subdir, input_name, covariate_dir_name, output_dir_name, bias, do_att, command):
     """Calculates and saves a single sensitivity plot for a single bootstrapped dataset. 
 
     Args:
@@ -342,11 +356,11 @@ def do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, out
         variable_coords: DataFrame with co-ordinates of the plots representing missing covariates. Is None if no covariate information was passed
 
     """
-    subdir = subdir_list[n]
     input_csv, boot_output_dir, boot_covariate_dir = get_bootstrap_folder_names(
         subdir, input_name, covariate_dir_name, output_dir_name)
-    plot_coords, variable_coords = do_single_sensitivity(input_csv, bias, boot_output_dir,
-                                                         boot_covariate_dir, do_att, command, verbose=False)
+    _, plot_coords, variable_coords = do_single_sensitivity(input_csv, bias, boot_output_dir,
+                                                         boot_covariate_dir, do_att, command, plot_graph=False,
+                                                         verbose=False)
     # rename columns to have a suffix of the iteration number
     plot_coords = plot_coords.drop(columns='delta').rename(
         columns={'Rsq': f"Rsq_{n}"})
@@ -358,11 +372,12 @@ def do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, out
         return plot_coords, None
 
 
-def do_sensitivity(input_csv, bias, output_dir, covariate_dir=None, bootstrap_dir=None, bootstrap_cutoff=0.95, do_att=False,
-         multi=1):
+def do_sensitivity(input_csv, bias, output_dir, covariate_dir=None, bootstrap_dir=None, bootstrap_cutoff=0.95,
+                   do_att=False,
+                   multi=1):
     # plot single sensitivity without bootstrap
-    command = f'do_sensitivity.py --input_csv {input_csv} --bias {bias} --output_dir {output_dir}, --covariate_dir {covariate_dir} --bootstrap_dir {bootstrap_dir} --bootstrap_dir {bootstrap_dir} --bootstrap_cutoff {bootstrap_cutoff}, --do_att {do_att} --multi {multi}'
-    main_plot_coords, main_variable_coords = do_single_sensitivity(input_csv, bias, output_dir,
+    command = f'do_sensitivity.py --input_csv {input_csv} --bias {bias} --output_dir {output_dir} --covariate_dir {covariate_dir} --bootstrap_dir {bootstrap_dir} --bootstrap_dir {bootstrap_dir} --bootstrap_cutoff {bootstrap_cutoff}, --do_att {do_att} --multi {multi}'
+    _, main_plot_coords, main_variable_coords = do_single_sensitivity(input_csv, bias, output_dir,
                                                                    covariate_dir, do_att, command)
 
     # if bootstrap values provided
@@ -377,18 +392,18 @@ def do_sensitivity(input_csv, bias, output_dir, covariate_dir=None, bootstrap_di
         output_dir_name = os.path.basename(os.path.normpath(output_dir))
 
         # create paths of input subdirectories
-        subdir_list = [os.path.join(bootstrap_dir, subdir)
-                       for subdir in os.listdir(bootstrap_dir) if not subdir.startswith('.')]
+        subdir_list = sorted([os.path.join(bootstrap_dir, subdir)
+                       for subdir in os.listdir(bootstrap_dir) if not subdir.startswith('.')])
         print('Calculating outputs for individual bootstrapped datasets')
 
         boot_plot_coords = []
         boot_variable_coords = []
 
-        for n in range(len(subdir_list)):
-            plot_coords, variable_coords = do_bootstrap_sensitivity(n, subdir_list, input_name, covariate_dir_name, output_dir_name, bias, do_att, command)
+        for n, subdir in tqdm(enumerate(subdir_list)):
+            plot_coords, variable_coords = do_single_bootstrap_sensitivity(n, subdir, input_name, covariate_dir_name,
+                                                                    output_dir_name, bias, do_att, command)
             boot_plot_coords.append(plot_coords)
             boot_variable_coords.append(variable_coords)
-
 
         #
         # # Create pool for multiprocessing
@@ -419,9 +434,14 @@ def do_sensitivity(input_csv, bias, output_dir, covariate_dir=None, bootstrap_di
                 plot_variables = 'both'
         print('Plotting combined bootstrap graph')
 
-        p, plot_coords_out, variable_coords_out = plot_bootstrap_sensitivity_graph(
-            main_plot_coords, main_variable_coords, boot_plot_coords, boot_variable_coords, plot_variables,
-            bootstrap_cutoff, bias)
+        combined_plot_coords, combined_variable_coords = calculate_bootstrap_sensitivity_graph(main_plot_coords,
+                                                                                               main_variable_coords,
+                                                                                               boot_plot_coords,
+                                                                                               boot_variable_coords,
+                                                                                               plot_variables,
+                                                                                               bootstrap_cutoff)
+
+        p = plot_bootstrap_sensitivity_graph(combined_plot_coords, combined_variable_coords, plot_variables, bias)
 
         # Save bootstrap output files
         p.save(os.path.join(output_dir,
@@ -429,14 +449,12 @@ def do_sensitivity(input_csv, bias, output_dir, covariate_dir=None, bootstrap_di
 
         with open(os.path.join(output_dir, 'austen_plot_coordinates_bootstrap.csv'), 'w+', newline='\n') as file:
             file.write(f'#{command}\n')
-            plot_coords_out.to_csv(file, index=False)
-        if variable_coords_out is not None:
+            combined_plot_coords.to_csv(file, index=False)
+        if combined_variable_coords is not None:
             with open(os.path.join(output_dir, 'variable_importances_bootstrap.csv'), 'w+', newline='\n') as file:
                 file.write(f'#{command}\n')
-                variable_coords_out.to_csv(file, index=False)
-
-    return None
+                combined_variable_coords.to_csv(file, index=False)
 
 
 
-main('/Users/nuaxz24/Documents/Projects/austen_plots/example/input_df.csv', 2, '/Users/nuaxz24/Documents/Projects/austen_plots/example/sensitivity_output', '/Users/nuaxz24/Documents/Projects/austen_plots/example/covariates', '/Users/nuaxz24/Documents/Projects/austen_plots/example/bootstrap', multi=1)
+do_sensitivity('example/input_df.csv', 2, 'example/sensitivity_output', 'example/covariates', 'example/bootstrap')
