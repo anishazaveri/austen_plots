@@ -22,7 +22,7 @@ Use files under `example/` as reference
 4) Decide a meaningful amount of bias you would like to test for, based on domain knowledge about your dataset. Let's fix this as 2 for the example dataset
 5) Run the following code (values correspond to the example dataset).  
 
-```
+```python
 from austen_plots.AustenPlot import AustenPlot
 import os
 
@@ -57,7 +57,7 @@ _Recommendation_: If you are generating these values using cross validation tech
 4) (Optional) Decide a value for confidence interval cutoffs (Default=0.95)
 5) Run the following code (values correspond to the example dataset). 
 
-```
+```python
 from austen_plots.AustenPlot import AustenPlot
 import os
 
