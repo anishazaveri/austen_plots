@@ -1,6 +1,0 @@
-#../do_sensitivity.py --input_csv input_df.csv --bias 2 --output_dir sensitivity_output --covariate_dir covariates/ --bootstrap_dir bootstrap/ --multi 4
-covariate_name,ahat,Rsqhat
-age,0.1744891138016701,0.05453255069265664
-socioeconomic,0.04106709816163945,0.004137788557006168
-sex,0.0006437855163727857,0.029225528444846074
-bloodwork,0.02879555804747802,0.0
