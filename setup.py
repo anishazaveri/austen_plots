@@ -12,5 +12,5 @@ setup(name='austen_plots',
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8"],
-      install_requires=['plotnine', 'numpy', 'pandas', 'scikit-learn', 'scipy', 'tqdm'],
+      install_requires=['pandas', 'plotnine', 'numpy', 'scikit-learn', 'scipy', 'tqdm'],
       zip_safe=False)
