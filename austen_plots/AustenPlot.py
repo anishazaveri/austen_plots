@@ -243,7 +243,7 @@ class AustenPlot:
 
         return p
 
-    def fit(self, bias: float, do_bootstrap: bool = True, ci_cutoff: float = 0.95, do_att: bool = False) -> \
+    def fit(self, bias: float, do_bootstrap: bool = False, ci_cutoff: float = 0.95, do_att: bool = False) -> \
             Tuple[pn.ggplot, DataFrame, Optional[DataFrame]]:
         """
         Fits an Austen plot
