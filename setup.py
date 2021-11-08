@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='austen_plots',
-      version='0.1.4',
+      version='0.1.5',
       description='Sensitivity analysis for causal inference',
       url='https://github.com/anishazaveri/austen_plots',
       author='Anisha Zaveri',

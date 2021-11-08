@@ -68,7 +68,7 @@ class AustenPlot:
 
         if plot_graph:
             p = self._plot_sensitivity_graph(
-                plot_coords, variable_importances_df, bias, verbose)
+                plot_coords, variable_importances_df, bias)
         else:
             p = None
 
