@@ -30,6 +30,7 @@ input_df_path = './example_data/input_df.csv'
 bias = 2.0
 
 # if you have no covariate controls skip specifying covariate_dir_path
+# covariate_dir_path = None
 covariate_dir_path = './example_data/covariates/'
 
 ap = AustenPlot(input_df_path, covariate_dir_path)
@@ -67,6 +68,7 @@ ci_cutoff = 0.9
 bootstrap_dir_path = './example_data/bootstrap/'
 
 # if you have no covariate controls skip specifying covariate_dir_path
+# covariate_dir_path = None
 covariate_dir_path = './example_data/covariates/'
 
 ap = AustenPlot(input_df_path, covariate_dir_path, bootstrap_dir_path)
@@ -76,3 +78,6 @@ p, plot_coords, variable_coords = ap.fit(bias=2.0, do_bootstrap=True, , ci_cutof
 
 # save outputs as shown above
 ```
+
+### Bug Reports
+Please report bugs to [Anisha Zaveri](mailto:anishazaveri@gmail.com)
