@@ -18,7 +18,8 @@ The presence of the common cause (wealth) induces a spurious positive associatio
 Austen plots are a simple visual method of determining whether some unobserved common could explain away the association between a specified treatment and outcome. The included software produces Austen plots from the outputs of standard data modeling used in causal inference pipelines. 
 
 ## Instructions
-See demo notebook `austen_plots_demo.ipynb`
+See colab demo here: https://github.com/vveitch/causality-tutorials/blob/main/Sensitivity_Analysis.ipynb
+Or see demo notebook `austen_plots_demo.ipynb`
 ### Without Bootstrapping
 Use files under `example_data/` as reference
 1) Fit your data using any model and generate predictions for g, the propensity score, and Q, the conditional expected outcome.
